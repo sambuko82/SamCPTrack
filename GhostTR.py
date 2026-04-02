@@ -30,8 +30,7 @@ Wh = '\033[1;37m'
 def is_option(func):
     def wrapper(*args, **kwargs):
         run_banner()
-        func(*args, **kwargs)
-
+        return func(*args, **kwargs)
 
     return wrapper
 
@@ -40,50 +39,74 @@ def is_option(func):
 @is_option
 def IP_Track():
     ip = input(f"{Wh}\n Enter IP target : {Gr}")  # INPUT IP ADDRESS
+    if not ip.strip():
+        print(f"{Re}\n [!] IP address cannot be empty!")
+        return
     print()
     print(f' {Wh}============= {Gr}SHOW INFORMATION IP ADDRESS {Wh}=============')
-    req_api = requests.get(f"http://ipwho.is/{ip}")  # API IPWHOIS.IS
-    ip_data = json.loads(req_api.text)
-    time.sleep(2)
+    try:
+        req_api = requests.get(f"http://ipwho.is/{ip}", timeout=15)  # API IPWHOIS.IS
+        req_api.raise_for_status()
+        ip_data = req_api.json()
+    except requests.exceptions.Timeout:
+        print(f"{Re}\n [!] Request timed out. Check your internet connection.")
+        return
+    except requests.exceptions.RequestException as e:
+        print(f"{Re}\n [!] Network error: {e}")
+        return
+    if not ip_data.get("success", True):
+        print(f"{Re}\n [!] Invalid IP address or API error: {ip_data.get('message', 'Unknown error')}")
+        return
+    time.sleep(1)
+    lat = ip_data.get('latitude', 0)
+    lon = ip_data.get('longitude', 0)
     print(f"{Wh}\n IP target       :{Gr}", ip)
-    print(f"{Wh} Type IP         :{Gr}", ip_data["type"])
-    print(f"{Wh} Country         :{Gr}", ip_data["country"])
-    print(f"{Wh} Country Code    :{Gr}", ip_data["country_code"])
-    print(f"{Wh} City            :{Gr}", ip_data["city"])
-    print(f"{Wh} Continent       :{Gr}", ip_data["continent"])
-    print(f"{Wh} Continent Code  :{Gr}", ip_data["continent_code"])
-    print(f"{Wh} Region          :{Gr}", ip_data["region"])
-    print(f"{Wh} Region Code     :{Gr}", ip_data["region_code"])
-    print(f"{Wh} Latitude        :{Gr}", ip_data["latitude"])
-    print(f"{Wh} Longitude       :{Gr}", ip_data["longitude"])
-    lat = int(ip_data['latitude'])
-    lon = int(ip_data['longitude'])
+    print(f"{Wh} Type IP         :{Gr}", ip_data.get("type", "-"))
+    print(f"{Wh} Country         :{Gr}", ip_data.get("country", "-"))
+    print(f"{Wh} Country Code    :{Gr}", ip_data.get("country_code", "-"))
+    print(f"{Wh} City            :{Gr}", ip_data.get("city", "-"))
+    print(f"{Wh} Continent       :{Gr}", ip_data.get("continent", "-"))
+    print(f"{Wh} Continent Code  :{Gr}", ip_data.get("continent_code", "-"))
+    print(f"{Wh} Region          :{Gr}", ip_data.get("region", "-"))
+    print(f"{Wh} Region Code     :{Gr}", ip_data.get("region_code", "-"))
+    print(f"{Wh} Latitude        :{Gr}", lat)
+    print(f"{Wh} Longitude       :{Gr}", lon)
     print(f"{Wh} Maps            :{Gr}", f"https://www.google.com/maps/@{lat},{lon},8z")
-    print(f"{Wh} EU              :{Gr}", ip_data["is_eu"])
-    print(f"{Wh} Postal          :{Gr}", ip_data["postal"])
-    print(f"{Wh} Calling Code    :{Gr}", ip_data["calling_code"])
-    print(f"{Wh} Capital         :{Gr}", ip_data["capital"])
-    print(f"{Wh} Borders         :{Gr}", ip_data["borders"])
-    print(f"{Wh} Country Flag    :{Gr}", ip_data["flag"]["emoji"])
-    print(f"{Wh} ASN             :{Gr}", ip_data["connection"]["asn"])
-    print(f"{Wh} ORG             :{Gr}", ip_data["connection"]["org"])
-    print(f"{Wh} ISP             :{Gr}", ip_data["connection"]["isp"])
-    print(f"{Wh} Domain          :{Gr}", ip_data["connection"]["domain"])
-    print(f"{Wh} ID              :{Gr}", ip_data["timezone"]["id"])
-    print(f"{Wh} ABBR            :{Gr}", ip_data["timezone"]["abbr"])
-    print(f"{Wh} DST             :{Gr}", ip_data["timezone"]["is_dst"])
-    print(f"{Wh} Offset          :{Gr}", ip_data["timezone"]["offset"])
-    print(f"{Wh} UTC             :{Gr}", ip_data["timezone"]["utc"])
-    print(f"{Wh} Current Time    :{Gr}", ip_data["timezone"]["current_time"])
+    print(f"{Wh} EU              :{Gr}", ip_data.get("is_eu", "-"))
+    print(f"{Wh} Postal          :{Gr}", ip_data.get("postal", "-"))
+    print(f"{Wh} Calling Code    :{Gr}", ip_data.get("calling_code", "-"))
+    print(f"{Wh} Capital         :{Gr}", ip_data.get("capital", "-"))
+    print(f"{Wh} Borders         :{Gr}", ip_data.get("borders", "-"))
+    flag = ip_data.get("flag", {})
+    print(f"{Wh} Country Flag    :{Gr}", flag.get("emoji", "-"))
+    connection = ip_data.get("connection", {})
+    print(f"{Wh} ASN             :{Gr}", connection.get("asn", "-"))
+    print(f"{Wh} ORG             :{Gr}", connection.get("org", "-"))
+    print(f"{Wh} ISP             :{Gr}", connection.get("isp", "-"))
+    print(f"{Wh} Domain          :{Gr}", connection.get("domain", "-"))
+    tz = ip_data.get("timezone", {})
+    print(f"{Wh} ID              :{Gr}", tz.get("id", "-"))
+    print(f"{Wh} ABBR            :{Gr}", tz.get("abbr", "-"))
+    print(f"{Wh} DST             :{Gr}", tz.get("is_dst", "-"))
+    print(f"{Wh} Offset          :{Gr}", tz.get("offset", "-"))
+    print(f"{Wh} UTC             :{Gr}", tz.get("utc", "-"))
+    print(f"{Wh} Current Time    :{Gr}", tz.get("current_time", "-"))
 
 
 @is_option
 def phoneGW():
     User_phone = input(
         f"\n {Wh}Enter phone number target {Gr}Ex [+6281xxxxxxxxx] {Wh}: {Gr}")  # INPUT NUMBER PHONE
+    if not User_phone.strip():
+        print(f"{Re}\n [!] Phone number cannot be empty!")
+        return
     default_region = "ID"  # DEFAULT NEGARA INDONESIA
 
-    parsed_number = phonenumbers.parse(User_phone, default_region)  # VARIABLE PHONENUMBERS
+    try:
+        parsed_number = phonenumbers.parse(User_phone, default_region)  # VARIABLE PHONENUMBERS
+    except phonenumbers.NumberParseException as e:
+        print(f"{Re}\n [!] Invalid phone number format: {e}")
+        return
     region_code = phonenumbers.region_code_for_number(parsed_number)
     jenis_provider = carrier.name_for_number(parsed_number, "en")
     location = geocoder.description_for_number(parsed_number, "id")
@@ -120,45 +143,49 @@ def phoneGW():
 
 @is_option
 def TrackLu():
-    try:
-        username = input(f"\n {Wh}Enter Username : {Gr}")
-        results = {}
-        social_media = [
-            {"url": "https://www.facebook.com/{}", "name": "Facebook"},
-            {"url": "https://www.twitter.com/{}", "name": "Twitter"},
-            {"url": "https://www.instagram.com/{}", "name": "Instagram"},
-            {"url": "https://www.linkedin.com/in/{}", "name": "LinkedIn"},
-            {"url": "https://www.github.com/{}", "name": "GitHub"},
-            {"url": "https://www.pinterest.com/{}", "name": "Pinterest"},
-            {"url": "https://www.tumblr.com/{}", "name": "Tumblr"},
-            {"url": "https://www.youtube.com/{}", "name": "Youtube"},
-            {"url": "https://soundcloud.com/{}", "name": "SoundCloud"},
-            {"url": "https://www.snapchat.com/add/{}", "name": "Snapchat"},
-            {"url": "https://www.tiktok.com/@{}", "name": "TikTok"},
-            {"url": "https://www.behance.net/{}", "name": "Behance"},
-            {"url": "https://www.medium.com/@{}", "name": "Medium"},
-            {"url": "https://www.quora.com/profile/{}", "name": "Quora"},
-            {"url": "https://www.flickr.com/people/{}", "name": "Flickr"},
-            {"url": "https://www.periscope.tv/{}", "name": "Periscope"},
-            {"url": "https://www.twitch.tv/{}", "name": "Twitch"},
-            {"url": "https://www.dribbble.com/{}", "name": "Dribbble"},
-            {"url": "https://www.stumbleupon.com/stumbler/{}", "name": "StumbleUpon"},
-            {"url": "https://www.ello.co/{}", "name": "Ello"},
-            {"url": "https://www.producthunt.com/@{}", "name": "Product Hunt"},
-            {"url": "https://www.snapchat.com/add/{}", "name": "Snapchat"},
-            {"url": "https://www.telegram.me/{}", "name": "Telegram"},
-            {"url": "https://www.weheartit.com/{}", "name": "We Heart It"}
-        ]
-        for site in social_media:
-            url = site['url'].format(username)
-            response = requests.get(url)
+    username = input(f"\n {Wh}Enter Username : {Gr}")
+    if not username.strip():
+        print(f"{Re}\n [!] Username cannot be empty!")
+        return
+    results = {}
+    social_media = [
+        {"url": "https://www.facebook.com/{}", "name": "Facebook"},
+        {"url": "https://www.twitter.com/{}", "name": "Twitter"},
+        {"url": "https://www.instagram.com/{}", "name": "Instagram"},
+        {"url": "https://www.linkedin.com/in/{}", "name": "LinkedIn"},
+        {"url": "https://www.github.com/{}", "name": "GitHub"},
+        {"url": "https://www.pinterest.com/{}", "name": "Pinterest"},
+        {"url": "https://www.tumblr.com/{}", "name": "Tumblr"},
+        {"url": "https://www.youtube.com/{}", "name": "Youtube"},
+        {"url": "https://soundcloud.com/{}", "name": "SoundCloud"},
+        {"url": "https://www.snapchat.com/add/{}", "name": "Snapchat"},
+        {"url": "https://www.tiktok.com/@{}", "name": "TikTok"},
+        {"url": "https://www.behance.net/{}", "name": "Behance"},
+        {"url": "https://www.medium.com/@{}", "name": "Medium"},
+        {"url": "https://www.quora.com/profile/{}", "name": "Quora"},
+        {"url": "https://www.flickr.com/people/{}", "name": "Flickr"},
+        {"url": "https://www.twitch.tv/{}", "name": "Twitch"},
+        {"url": "https://www.dribbble.com/{}", "name": "Dribbble"},
+        {"url": "https://www.ello.co/{}", "name": "Ello"},
+        {"url": "https://www.producthunt.com/@{}", "name": "Product Hunt"},
+        {"url": "https://www.telegram.me/{}", "name": "Telegram"},
+        {"url": "https://www.weheartit.com/{}", "name": "We Heart It"}
+    ]
+    print(f"\n {Wh}Checking {Gr}{len(social_media)}{Wh} platforms, please wait...")
+    for site in social_media:
+        url = site['url'].format(username)
+        try:
+            response = requests.get(url, timeout=10)
             if response.status_code == 200:
                 results[site['name']] = url
+            elif response.status_code == 404:
+                results[site['name']] = f"{Ye}Not found{Wh}"
             else:
-                results[site['name']] = (f"{Ye}Username not found {Ye}!")
-    except Exception as e:
-        print(f"{Re}Error : {e}")
-        return
+                results[site['name']] = f"{Ye}Status {response.status_code}{Wh}"
+        except requests.exceptions.Timeout:
+            results[site['name']] = f"{Re}Timeout{Wh}"
+        except requests.exceptions.RequestException:
+            results[site['name']] = f"{Re}Error checking{Wh}"
 
     print(f"\n {Wh}========== {Gr}SHOW INFORMATION USERNAME {Wh}==========")
     print()
@@ -168,11 +195,19 @@ def TrackLu():
 
 @is_option
 def showIP():
-    respone = requests.get('https://api.ipify.org/')
-    Show_IP = respone.text
+    try:
+        response = requests.get('https://api.ipify.org/', timeout=10)
+        response.raise_for_status()
+        show_ip = response.text
+    except requests.exceptions.Timeout:
+        print(f"{Re}\n [!] Request timed out. Check your internet connection.")
+        return
+    except requests.exceptions.RequestException as e:
+        print(f"{Re}\n [!] Network error: {e}")
+        return
 
     print(f"\n {Wh}========== {Gr}SHOW INFORMATION YOUR IP {Wh}==========")
-    print(f"\n {Wh}[{Gr} + {Wh}] Your IP Adrress : {Gr}{Show_IP}")
+    print(f"\n {Wh}[{Gr} + {Wh}] Your IP Address : {Gr}{show_ip}")
     print(f"\n {Wh}==============================================")
 
 
@@ -228,18 +263,20 @@ def call_option(opt):
 
 
 def execute_option(opt):
-    try:
-        call_option(opt)
-        input(f'\n{Wh}[ {Gr}+ {Wh}] {Gr}Press enter to continue')
-        main()
-    except ValueError as e:
-        print(e)
-        time.sleep(2)
-        execute_option(opt)
-    except KeyboardInterrupt:
-        print(f'\n{Wh}[ {Re}! {Wh}] {Re}Exit')
-        time.sleep(2)
-        exit()
+    while True:
+        try:
+            call_option(opt)
+            input(f'\n{Wh}[ {Gr}+ {Wh}] {Gr}Press enter to continue')
+            main()
+            break
+        except ValueError as e:
+            print(e)
+            time.sleep(2)
+            break
+        except KeyboardInterrupt:
+            print(f'\n{Wh}[ {Re}! {Wh}] {Re}Exit')
+            time.sleep(2)
+            exit()
 
 
 def option_text():
